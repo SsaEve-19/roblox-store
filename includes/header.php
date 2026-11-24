@@ -12,7 +12,7 @@ $jmlCart = count($_SESSION['cart'] ?? []);
 </head>
 <body>
 <nav class="nav">
-  <a class="brand" href="<?= BASE_URL ?>/index.php">🎮 Roblox Store</a>
+  <a class="brand" href="<?= BASE_URL ?>/index.php">Roblox Store</a>
   <div class="links">
     <a href="<?= BASE_URL ?>/index.php">Beranda</a>
     <?php if ($u): ?>

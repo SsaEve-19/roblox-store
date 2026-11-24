@@ -21,7 +21,7 @@ if (!empty($_SESSION['cart'])) {
   <?php endforeach; ?>
   <tr><th>Total</th><th colspan="2"><?= rupiah($total) ?></th></tr>
 </table>
-<form method="post" action="checkout.php"><button class="btn">Checkout (Simulasi)</button></form>
+<form method="post" action="checkout.php"><button class="btn">Checkout</button></form>
 <?php else: ?>
 <p>Keranjang kosong. <a href="../index.php">Cari produk</a></p>
 <?php endif; ?>

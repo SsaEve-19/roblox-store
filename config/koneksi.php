@@ -1,6 +1,6 @@
 <?php
 session_start();
-ob_start(); // supaya header('Location') tetap jalan walau HTML sudah dicetak
+ob_start();
 
 $pdo = new PDO(
     "mysql:host=localhost;dbname=roblox_store;charset=utf8mb4",
@@ -8,10 +8,9 @@ $pdo = new PDO(
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
 );
 
-// Ubah jika nama folder di htdocs berbeda
 define('BASE_URL', '/roblox-store');
 
-// Rekening tujuan pembayaran (dummy)
+// Rekening tujuan
 define('REKENING', [
     ['Bank BCA', '1234567890', 'Roblox Store'],
     ['DANA',     '081234567890', 'Roblox Store'],
@@ -58,7 +57,6 @@ function bintang($n) {
     return str_repeat('★', $n) . str_repeat('☆', 5 - $n);
 }
 
-// Navigasi halaman: $params = parameter GET lain yang harus dipertahankan
 function paginasi($page, $pages, $params = []) {
     if ($pages <= 1) return '';
     $link = function ($i, $label, $cls = '') use ($params) {

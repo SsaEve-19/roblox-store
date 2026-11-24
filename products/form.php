@@ -4,7 +4,7 @@ require '../includes/header.php';
 role_required('penjual');
 
 $id = (int)($_GET['id'] ?? 0);
-$p = ['judul'=>'','deskripsi'=>'','harga'=>'','category_id'=>'','gambar'=>null,'status'=>'tersedia'];
+$p = ['judul'=>'','deskripsi'=>'','harga'=>'','category_id'=>'','gambar'=>null,'status'=>'tersedia','data_item'=>''];
 if ($id) {
     $st = $pdo->prepare("SELECT * FROM products WHERE id=? AND seller_id=?");
     $st->execute([$id, $u['id']]);
@@ -16,18 +16,18 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $jdl = trim($_POST['judul']); $desk = trim($_POST['deskripsi']);
-    $harga = (int)$_POST['harga']; $kat = (int)$_POST['category_id'];
+    $data = trim($_POST['data_item'] ?? ''); $harga = (int)$_POST['harga']; $kat = (int)$_POST['category_id'];
     $status = ($_POST['status'] ?? '') === 'terjual' ? 'terjual' : 'tersedia';
     if ($jdl === '' || $harga <= 0 || !$kat) {
         $error = 'Judul, kategori, dan harga wajib diisi dengan benar.';
     } else {
         $gambar = upload_gambar($_FILES['gambar'] ?? []) ?? $p['gambar'];
         if ($id) {
-            $pdo->prepare("UPDATE products SET judul=?,deskripsi=?,harga=?,category_id=?,gambar=?,status=? WHERE id=? AND seller_id=?")
-                ->execute([$jdl,$desk,$harga,$kat,$gambar,$status,$id,$u['id']]);
+            $pdo->prepare("UPDATE products SET judul=?,deskripsi=?,harga=?,category_id=?,gambar=?,status=?,data_item=? WHERE id=? AND seller_id=?")
+                ->execute([$jdl,$desk,$harga,$kat,$gambar,$status,$data ?: null,$id,$u['id']]);
         } else {
-            $pdo->prepare("INSERT INTO products (seller_id,category_id,judul,deskripsi,harga,gambar) VALUES (?,?,?,?,?,?)")
-                ->execute([$u['id'],$kat,$jdl,$desk,$harga,$gambar]);
+            $pdo->prepare("INSERT INTO products (seller_id,category_id,judul,deskripsi,harga,gambar,data_item) VALUES (?,?,?,?,?,?,?)")
+                ->execute([$u['id'],$kat,$jdl,$desk,$harga,$gambar,$data ?: null]);
         }
         header('Location: saya.php'); exit;
     }
@@ -46,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </select>
     <label>Harga (Rp)</label><input type="number" name="harga" min="1" value="<?= e($p['harga']) ?>" required>
     <label>Deskripsi</label><textarea name="deskripsi" rows="5"><?= e($p['deskripsi']) ?></textarea>
+    <label>Data Akun/Item (RAHASIA)</label>
+    <textarea name="data_item" rows="4" placeholder="Contoh:&#10;Username: akunku123&#10;Password: rahasia456"><?= e($p['data_item']) ?></textarea>
+    <small class="muted">Tidak tampil di publik. Hanya dikirim ke pembeli setelah pembayaran diverifikasi admin.</small>
     <label>Gambar (jpg/png/webp, maks 2MB)</label><input type="file" name="gambar" accept="image/*">
     <?php if ($id): ?>
       <label>Status</label>
