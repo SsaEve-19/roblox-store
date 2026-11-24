@@ -16,13 +16,16 @@ $jmlCart = count($_SESSION['cart'] ?? []);
   <div class="links">
     <a href="<?= BASE_URL ?>/index.php">Beranda</a>
     <?php if ($u): ?>
-      <?php if ($u['role'] === 'penjual'): ?><a href="<?= BASE_URL ?>/products/saya.php">Produk Saya</a><?php endif; ?>
+      <?php if ($u['role'] === 'penjual'): ?>
+        <a href="<?= BASE_URL ?>/products/saya.php">Produk Saya</a>
+        <a href="<?= BASE_URL ?>/products/penjualan.php">Penjualan</a>
+      <?php endif; ?>
       <?php if ($u['role'] === 'admin'): ?><a href="<?= BASE_URL ?>/admin/index.php">Admin</a><?php endif; ?>
       <?php if ($u['role'] === 'pembeli'): ?>
         <a href="<?= BASE_URL ?>/cart/index.php">Keranjang (<?= $jmlCart ?>)</a>
         <a href="<?= BASE_URL ?>/cart/pesanan.php">Pesanan</a>
       <?php endif; ?>
-      <span class="user">Hai, <?= e($u['username']) ?></span>
+      <a class="user" href="<?= BASE_URL ?>/profil/index.php">👤 <?= e($u['username']) ?></a>
       <a href="<?= BASE_URL ?>/auth/logout.php">Logout</a>
     <?php else: ?>
       <a href="<?= BASE_URL ?>/auth/login.php">Login</a>

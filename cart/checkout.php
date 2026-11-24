@@ -21,7 +21,7 @@ try {
     }
     $pdo->commit();
     $_SESSION['cart'] = [];
-    header('Location: pesanan.php?sukses=1');
+    header('Location: bayar.php?id=' . $orderId);
 } catch (Exception $ex) {
     $pdo->rollBack();
     die('Checkout gagal: ' . e($ex->getMessage()));

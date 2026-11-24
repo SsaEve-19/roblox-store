@@ -39,3 +39,25 @@ input,select,textarea{width:100%;padding:10px;background:var(--bg);border:1px so
 .stat small{display:block;color:var(--muted)}.stat b{font-size:1.4rem}
 .tabs{display:flex;gap:8px;margin-top:10px}
 .tabs a{padding:8px 18px;background:var(--panel);border-radius:8px}.tabs a.on{background:var(--accent)}
+
+/* --- fitur tambahan --- */
+.muted{color:var(--muted)}
+.link{color:#6cb6ff}.link:hover{text-decoration:underline}
+.stars{color:#ffc83d;letter-spacing:1px}.stars.big{font-size:1.4rem}
+.paging{display:flex;gap:6px;justify-content:center;margin:28px 0;flex-wrap:wrap}
+.paging a{padding:7px 13px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.paging a:hover{border-color:var(--accent)}.paging a.on{background:var(--accent);border-color:var(--accent)}
+.badge.st-menunggu_pembayaran{background:#5c4a12;color:#ffd166}
+.badge.st-menunggu_verifikasi{background:#123a5c;color:#6cb6ff}
+.badge.st-selesai{background:#14301f;color:#4ade80}
+.badge.st-dibatalkan{background:#3a1717;color:#f87171}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.two-col .form-box{margin:0;max-width:none}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.items{list-style:none;padding:0;margin:12px 0}
+.items li{padding:8px 0;border-bottom:1px dashed var(--line)}
+.rate-form{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.rate-form select{width:auto}.rate-form input[type=text]{flex:1;min-width:160px}
+.actions{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.actions form{margin:0}
+h2{margin-top:32px}

@@ -5,16 +5,28 @@ require 'includes/header.php';
 $q = trim($_GET['q'] ?? '');
 $kat = (int)($_GET['kategori'] ?? 0);
 
-$sql = "SELECT p.*, c.nama AS kategori, u.username AS penjual FROM products p
-        JOIN categories c ON c.id=p.category_id JOIN users u ON u.id=p.seller_id
-        WHERE p.status='tersedia'";
+$where = "WHERE p.status='tersedia'";
 $params = [];
-if ($q !== '') { $sql .= " AND p.judul LIKE ?"; $params[] = "%$q%"; }
-if ($kat)      { $sql .= " AND p.category_id = ?"; $params[] = $kat; }
-$sql .= " ORDER BY p.created_at DESC";
-$st = $pdo->prepare($sql); $st->execute($params);
+if ($q !== '') { $where .= " AND p.judul LIKE ?"; $params[] = "%$q%"; }
+if ($kat)      { $where .= " AND p.category_id = ?"; $params[] = $kat; }
+
+$per = 8;
+$cnt = $pdo->prepare("SELECT COUNT(*) FROM products p $where");
+$cnt->execute($params);
+$total = (int)$cnt->fetchColumn();
+$pages = max(1, (int)ceil($total / $per));
+$page = min(max(1, (int)($_GET['page'] ?? 1)), $pages);
+$offset = ($page - 1) * $per;
+
+$st = $pdo->prepare("SELECT p.*, c.nama AS kategori, u.username AS penjual,
+        (SELECT ROUND(AVG(rating),1) FROM ratings WHERE seller_id=p.seller_id) AS rating
+        FROM products p JOIN categories c ON c.id=p.category_id JOIN users u ON u.id=p.seller_id
+        $where ORDER BY p.created_at DESC LIMIT $per OFFSET $offset");
+$st->execute($params);
 $produk = $st->fetchAll();
 $kategori = $pdo->query("SELECT * FROM categories")->fetchAll();
+
+$keep = array_filter(['q' => $q, 'kategori' => $kat]);
 ?>
 <h1>Marketplace Roblox</h1>
 <form class="filter" method="get">
@@ -27,6 +39,7 @@ $kategori = $pdo->query("SELECT * FROM categories")->fetchAll();
   </select>
   <button class="btn">Cari</button>
 </form>
+<p class="hint"><?= $total ?> produk ditemukan</p>
 
 <div class="grid">
 <?php foreach ($produk as $p): ?>
@@ -36,10 +49,13 @@ $kategori = $pdo->query("SELECT * FROM categories")->fetchAll();
       <span class="badge"><?= e($p['kategori']) ?></span>
       <h3><?= e($p['judul']) ?></h3>
       <p class="harga"><?= rupiah($p['harga']) ?></p>
-      <small>Penjual: <?= e($p['penjual']) ?></small>
+      <small>Penjual: <?= e($p['penjual']) ?>
+        <?= $p['rating'] ? '<span class="stars">★ ' . e($p['rating']) . '</span>' : '<span class="muted">(belum ada rating)</span>' ?>
+      </small>
     </div>
   </a>
 <?php endforeach; ?>
 <?php if (!$produk): ?><p>Produk tidak ditemukan.</p><?php endif; ?>
 </div>
+<?= paginasi($page, $pages, $keep) ?>
 <?php require 'includes/footer.php'; ?>
