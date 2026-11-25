@@ -12,13 +12,14 @@ $jmlCart = count($_SESSION['cart'] ?? []);
 </head>
 <body>
 <nav class="nav">
-  <a class="brand" href="<?= BASE_URL ?>/index.php">Roblox Store</a>
+  <a class="brand" href="<?= BASE_URL ?>/index.php">🎮 Roblox Store</a>
   <div class="links">
     <a href="<?= BASE_URL ?>/index.php">Beranda</a>
     <?php if ($u): ?>
       <?php if ($u['role'] === 'penjual'): ?>
         <a href="<?= BASE_URL ?>/products/saya.php">Produk Saya</a>
         <a href="<?= BASE_URL ?>/products/penjualan.php">Penjualan</a>
+        <a href="<?= BASE_URL ?>/products/penarikan.php">Penarikan</a>
       <?php endif; ?>
       <?php if ($u['role'] === 'admin'): ?><a href="<?= BASE_URL ?>/admin/index.php">Admin</a><?php endif; ?>
       <?php if ($u['role'] === 'pembeli'): ?>

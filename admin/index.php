@@ -7,6 +7,7 @@ $defs = [
   'users'   => ['SELECT COUNT(*) FROM users', 'SELECT * FROM users ORDER BY id'],
   'produk'  => ['SELECT COUNT(*) FROM products', 'SELECT p.*, u.username FROM products p JOIN users u ON u.id=p.seller_id ORDER BY p.id DESC'],
   'pesanan' => ['SELECT COUNT(*) FROM orders', 'SELECT o.*, u.username FROM orders o JOIN users u ON u.id=o.buyer_id ORDER BY o.id DESC'],
+  'penarikan' => ['SELECT COUNT(*) FROM withdrawals', "SELECT w.*, u.username FROM withdrawals w JOIN users u ON u.id=w.seller_id ORDER BY (w.status='menunggu') DESC, w.id DESC"],
 ];
 $tab = isset($defs[$_GET['tab'] ?? '']) ? $_GET['tab'] : 'users';
 $per = 10;
@@ -17,10 +18,26 @@ $self = '?tab=' . $tab . '&page=' . $page;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $aksi = $_POST['aksi'] ?? ''; $id = (int)($_POST['id'] ?? 0);
-    if ($aksi === 'hapus_user' && $id !== (int)$u['id'])
+    if ($aksi === 'hapus_user' && $id !== (int)$u['id']) {
+        $files = berkas_penjual($pdo, $id);
         $pdo->prepare("DELETE FROM users WHERE id=?")->execute([$id]);
-    if ($aksi === 'hapus_produk')
+        hapus_berkas($files);
+    }
+    if ($aksi === 'hapus_produk') {
+        $files = berkas_produk($pdo, $id);
         $pdo->prepare("DELETE FROM products WHERE id=?")->execute([$id]);
+        hapus_berkas($files);
+    }
+    if ($aksi === 'proses_tarik') {
+        $putusan = $_POST['keputusan'] ?? '';
+        $madm = mb_substr(trim($_POST['metode_admin'] ?? ''), 0, 100);   // bebas; kosong = sesuai permintaan penjual
+        $cat  = mb_substr(trim($_POST['catatan_admin'] ?? ''), 0, 255);
+        if (in_array($putusan, ['disetujui', 'ditolak'], true)) {
+            // hanya yang masih 'menunggu' yang bisa diproses; ditolak = saldo otomatis kembali ke penjual
+            $pdo->prepare("UPDATE withdrawals SET status=?, metode_admin=?, catatan_admin=?, diproses_at=NOW() WHERE id=? AND status='menunggu'")
+                ->execute([$putusan, $madm ?: null, $cat ?: null, $id]);
+        }
+    }
     if ($aksi === 'status_order') {
         $baru = $_POST['status'] ?? '';
         $cur = $pdo->prepare("SELECT status FROM orders WHERE id=?"); $cur->execute([$id]); $cur = $cur->fetchColumn();
@@ -41,6 +58,7 @@ $stat = [
   'Produk'          => $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn(),
   'Pesanan'         => $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn(),
   'Perlu Verifikasi'=> $pdo->query("SELECT COUNT(*) FROM orders WHERE status='menunggu_verifikasi'")->fetchColumn(),
+  'Penarikan Menunggu' => $pdo->query("SELECT COUNT(*) FROM withdrawals WHERE status='menunggu'")->fetchColumn(),
   'Omzet (selesai)' => rupiah($pdo->query("SELECT COALESCE(SUM(total),0) FROM orders WHERE status='selesai'")->fetchColumn()),
 ];
 ?>
@@ -52,6 +70,7 @@ $stat = [
   <a class="<?= $tab==='users'?'on':'' ?>" href="?tab=users">User</a>
   <a class="<?= $tab==='produk'?'on':'' ?>" href="?tab=produk">Produk</a>
   <a class="<?= $tab==='pesanan'?'on':'' ?>" href="?tab=pesanan">Pesanan</a>
+  <a class="<?= $tab==='penarikan'?'on':'' ?>" href="?tab=penarikan">Penarikan</a>
 </div>
 
 <?php if ($tab === 'users'): ?>
@@ -74,6 +93,33 @@ $stat = [
   <input type="hidden" name="aksi" value="hapus_produk"><input type="hidden" name="id" value="<?= $r['id'] ?>">
   <button class="btn small danger">Hapus</button></form></td></tr>
 <?php endforeach; ?></table>
+
+<?php elseif ($tab === 'penarikan'): ?>
+<table class="tbl"><tr><th>ID</th><th>Penjual</th><th>Jumlah</th><th>Tujuan</th><th>Status / Proses</th></tr>
+<?php foreach ($rows as $r): ?>
+<tr><td>#<?= $r['id'] ?><br><small class="muted"><?= e($r['created_at']) ?></small></td>
+<td><?= e($r['username']) ?></td>
+<td><b><?= rupiah($r['jumlah']) ?></b></td>
+<td><b><?= e($r['metode']) ?></b><br><?= e($r['no_tujuan']) ?><br><small class="muted">a.n. <?= e($r['atas_nama']) ?></small></td>
+<td>
+<?php if ($r['status'] === 'menunggu'): ?>
+  <form method="post" action="<?= e($self) ?>" class="proses">
+    <input type="hidden" name="aksi" value="proses_tarik"><input type="hidden" name="id" value="<?= $r['id'] ?>">
+    <input type="text" name="metode_admin" maxlength="100" placeholder="Dikirim via (bebas, kosong = sesuai penjual)">
+    <input type="text" name="catatan_admin" maxlength="255" placeholder="Catatan untuk penjual (opsional)">
+    <div class="actions">
+      <button class="btn small" name="keputusan" value="disetujui" onclick="return confirm('Tandai sudah ditransfer?')">Setujui</button>
+      <button class="btn small danger" name="keputusan" value="ditolak" onclick="return confirm('Tolak penarikan ini? Saldo kembali ke penjual.')">Tolak</button>
+    </div>
+  </form>
+<?php else: ?>
+  <span class="badge st-<?= e($r['status']) ?>"><?= e(tarik_label($r['status'])) ?></span>
+  <?php if ($r['metode_admin']): ?><br><small>via <b><?= e($r['metode_admin']) ?></b></small><?php endif; ?>
+  <?php if ($r['catatan_admin']): ?><br><small class="muted"><?= e($r['catatan_admin']) ?></small><?php endif; ?>
+<?php endif; ?>
+</td></tr>
+<?php endforeach; ?>
+<?php if (!$rows): ?><tr><td colspan="5">Belum ada permintaan penarikan.</td></tr><?php endif; ?></table>
 
 <?php else: ?>
 <table class="tbl"><tr><th>ID</th><th>Pembeli</th><th>Total</th><th>Tanggal</th><th>Bukti Bayar</th><th>Status</th></tr>

@@ -23,6 +23,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <label>Password</label><input type="password" name="password" required>
     <button class="btn">Masuk</button>
   </form>
-  <p class="hint">Akun dummy: <b>admin</b>, <b>penjual1</b>, <b>pembeli1</b> (password: <b>password</b>)</p>
 </div>
 <?php require '../includes/footer.php'; ?>

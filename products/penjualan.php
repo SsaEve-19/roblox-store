@@ -15,12 +15,15 @@ $st->execute([$u['id']]);
 $rows = $st->fetchAll();
 $pendapatan = 0;
 foreach ($rows as $r) if ($r['status'] === 'selesai') $pendapatan += $r['harga'];
+$saldo = saldo_penjual($pdo, $u['id']);
 ?>
 <h1>Penjualan Saya</h1>
 <div class="stats">
   <div class="stat"><small>Total Transaksi</small><b><?= count($rows) ?></b></div>
   <div class="stat"><small>Pendapatan (selesai)</small><b><?= rupiah($pendapatan) ?></b></div>
+  <div class="stat"><small>Saldo Tersedia</small><b><?= rupiah(max(0, $saldo['saldo'])) ?></b></div>
 </div>
+<a class="btn" href="penarikan.php">💸 Tarik Dana</a>
 <table class="tbl">
   <tr><th>Pesanan</th><th>Produk</th><th>Harga</th><th>Pembeli</th><th>Status</th><th>Ulasan</th></tr>
   <?php foreach ($rows as $r): ?>

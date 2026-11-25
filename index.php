@@ -9,6 +9,10 @@ $where = "WHERE p.status='tersedia'";
 $params = [];
 if ($q !== '') { $where .= " AND p.judul LIKE ?"; $params[] = "%$q%"; }
 if ($kat)      { $where .= " AND p.category_id = ?"; $params[] = $kat; }
+$hmin = angka($_GET['harga_min'] ?? ''); $hmax = angka($_GET['harga_max'] ?? '');
+if ($hmin && $hmax && $hmin > $hmax) [$hmin, $hmax] = [$hmax, $hmin];   // 15000-10000 tetap dibaca 10000-15000
+if ($hmin) { $where .= " AND p.harga >= ?"; $params[] = $hmin; }
+if ($hmax) { $where .= " AND p.harga <= ?"; $params[] = $hmax; }
 
 $per = 8;
 $cnt = $pdo->prepare("SELECT COUNT(*) FROM products p $where");
@@ -19,6 +23,7 @@ $page = min(max(1, (int)($_GET['page'] ?? 1)), $pages);
 $offset = ($page - 1) * $per;
 
 $st = $pdo->prepare("SELECT p.*, c.nama AS kategori, u.username AS penjual,
+        (SELECT COUNT(*) FROM product_images WHERE product_id=p.id) AS jml_foto,
         (SELECT ROUND(AVG(rating),1) FROM ratings WHERE seller_id=p.seller_id) AS rating
         FROM products p JOIN categories c ON c.id=p.category_id JOIN users u ON u.id=p.seller_id
         $where ORDER BY p.created_at DESC LIMIT $per OFFSET $offset");
@@ -26,7 +31,7 @@ $st->execute($params);
 $produk = $st->fetchAll();
 $kategori = $pdo->query("SELECT * FROM categories")->fetchAll();
 
-$keep = array_filter(['q' => $q, 'kategori' => $kat]);
+$keep = array_filter(['q' => $q, 'kategori' => $kat, 'harga_min' => $hmin, 'harga_max' => $hmax]);
 ?>
 <h1>Marketplace Roblox</h1>
 <form class="filter" method="get">
@@ -37,6 +42,8 @@ $keep = array_filter(['q' => $q, 'kategori' => $kat]);
       <option value="<?= $k['id'] ?>" <?= $kat == $k['id'] ? 'selected' : '' ?>><?= e($k['nama']) ?></option>
     <?php endforeach; ?>
   </select>
+  <input class="harga-in" type="text" inputmode="numeric" data-rupiah name="harga_min" placeholder="Harga min" value="<?= $hmin ?: '' ?>">
+  <input class="harga-in" type="text" inputmode="numeric" data-rupiah name="harga_max" placeholder="Harga maks" value="<?= $hmax ?: '' ?>">
   <button class="btn">Cari</button>
 </form>
 <p class="hint"><?= $total ?> produk ditemukan</p>
@@ -44,7 +51,10 @@ $keep = array_filter(['q' => $q, 'kategori' => $kat]);
 <div class="grid">
 <?php foreach ($produk as $p): ?>
   <a class="card" href="products/detail.php?id=<?= $p['id'] ?>">
-    <img src="<?= gambar_url($p['gambar']) ?>" alt="">
+    <div class="card-img">
+      <img src="<?= gambar_url($p['gambar']) ?>" alt="">
+      <?php if ($p['jml_foto'] > 1): ?><span class="foto-count">📷 <?= (int)$p['jml_foto'] ?></span><?php endif; ?>
+    </div>
     <div class="card-body">
       <span class="badge"><?= e($p['kategori']) ?></span>
       <h3><?= e($p['judul']) ?></h3>
